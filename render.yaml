@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: skill-exchange
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm --prefix server install && npm --prefix client install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: INITIAL_USER_CREDITS
+        value: 100
+      - key: DEFAULT_COMPLETION_REWARD_CREDITS
+        value: 50
+      - key: CANCELLATION_REFUND_HOURS_THRESHOLD
+        value: 24
+      - key: MONGODB_URI
+        sync: false

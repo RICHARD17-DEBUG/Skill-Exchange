@@ -358,10 +358,12 @@ export const MeetingRoomPage: React.FC = () => {
   useEffect(() => {
     if (!activeRoomId || !currentUserId) return;
 
-    // Direct port 5000 or fallback to proxy
-    const socketUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `http://${window.location.hostname}:5000`
-      : undefined;
+    // Direct port 5000 or fallback to origin
+    const socketUrl = (import.meta.env.VITE_BACKEND_URL as string) || (
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `http://${window.location.hostname}:5000`
+        : undefined
+    );
 
     const socket = io(socketUrl, {
       path: '/socket.io',

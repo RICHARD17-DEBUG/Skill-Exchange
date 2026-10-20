@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
 import authRoutes from './routes/auth';
 import categoryRoutes from './routes/categories';
@@ -47,6 +49,18 @@ app.use('/api/credits', creditRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Static Frontend Delivery for Unified Deployment (Render / Production)
+const clientBuildPath = path.resolve(__dirname, '../../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
