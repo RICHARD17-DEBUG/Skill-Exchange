@@ -1,0 +1,78 @@
+@startuml Skill_Exchange_Activity_Diagram
+skinparam shadowing false
+skinparam roundcorner 10
+
+start
+
+:Learner logs into Skill Exchange Platform;
+:Browse catalog & apply category/proficiency/credit filters;
+:Select desired Skill Listing;
+
+if (Review instructor profile & availability slots) then (Select open slot)
+  :Choose specific date & time slot;
+else (Custom request)
+  :Propose preferred session date & time;
+endif
+
+:Learner requests session booking;
+:System checks Learner credit balance vs skill credit cost;
+
+if (Learner credit balance >= listing credit cost?) then (No)
+  :Display "Insufficient Credits" error;
+  :Prompt learner to earn credits by teaching or claim initial grant;
+  stop
+else (Yes)
+  :Create Booking with status **Pending**;
+  :Send notification to Skill Provider;
+endif
+
+|Skill Provider|
+:Provider reviews pending booking request & student notes;
+
+if (Provider decision?) then (Reject)
+  :Set status to **Rejected**;
+  :Release availability slot;
+  :Notify learner;
+  stop
+else (Accept)
+  |Credit Engine|
+  :Atomically validate balance;
+  :Deduct credits from Learner account;
+  :Generate unique transaction ID (CTX-...);
+  :Record **session_redemption** in Credit Ledger;
+  :Mark booking **Confirmed**;
+  :Generate meeting room link;
+  :Reserve slot on calendar;
+endif
+
+|Session Execution|
+if (Cancellation requested before session?) then (Yes)
+  :Cancel booking;
+  if (Credit was already deducted?) then (Yes)
+    :Restore credits to Learner;
+    :Record **session_refund** in Credit Ledger;
+  endif
+  :Release availability slot;
+  :Notify participants;
+  stop
+else (No)
+  :Learner and Provider attend 1-on-1 session;
+endif
+
+|Session Completion|
+:Provider clicks "Mark as Completed";
+|Credit Engine|
+:Verify session completion;
+:Award teaching credits (+X) to Provider;
+:Record **teaching_reward** in Credit Ledger;
+:Update booking status to **Completed**;
+
+|Feedback Loop|
+:Learner receives feedback prompt;
+:Learner submits 1-5 Star rating and comment;
+:System recalculates Provider & Listing average ratings;
+:Provider rating profile updated;
+
+stop
+
+@enduml

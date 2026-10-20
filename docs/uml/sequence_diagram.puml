@@ -1,0 +1,90 @@
+@startuml Skill_Exchange_Sequence_Diagram
+autonumber
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam ParticipantPadding 15
+skinparam BoxPadding 10
+
+actor "Learner" as Learner
+actor "Provider" as Provider
+box "Frontend (React + Vite)" #F8FAFC
+  participant "UI Component" as Client
+end box
+box "Backend API (Express + Node.js)" #F1F5F9
+  participant "BookingController" as BookingCtrl
+  participant "CreditEngine" as Engine
+end box
+database "MongoDB Database" as DB
+
+== Phase 1: Booking Request & Credit Verification ==
+Learner -> Client: Selects Date, Time & Skill Listing (Cost = X Credits)
+Client -> BookingCtrl: POST /api/bookings { listingId, date, slotId }
+activate BookingCtrl
+
+BookingCtrl -> DB: Query User(learnerId) & Listing(listingId)
+DB --> BookingCtrl: Return learner balance & listing cost
+BookingCtrl -> BookingCtrl: Verify learner.creditBalance >= X
+alt Insufficient Credits
+  BookingCtrl --> Client: 400 Bad Request (Insufficient skill credits)
+  Client --> Learner: Display credit deficit notification
+else Sufficient Balance
+  BookingCtrl -> DB: Create Booking(status='pending', creditCost=X)
+  DB --> BookingCtrl: Return saved booking
+  BookingCtrl -> DB: Create Notification for Provider
+  BookingCtrl --> Client: 201 Created (Booking reference BK-...)
+  Client --> Learner: Show success modal
+end
+deactivate BookingCtrl
+
+== Phase 2: Provider Acceptance & Atomic Credit Deduction ==
+Provider -> Client: Views pending request and clicks "Accept & Reserve"
+Client -> BookingCtrl: PUT /api/bookings/:id/accept
+activate BookingCtrl
+
+BookingCtrl -> Engine: deductCreditsForBooking(bookingId, learnerId, X)
+activate Engine
+Engine -> DB: findOneAndUpdate({ _id: learnerId, creditBalance: { $gte: X } }, { $inc: { creditBalance: -X } })
+DB --> Engine: Return updatedUser with new balance
+Engine -> DB: Set booking.creditDeducted = true
+Engine -> DB: Insert CreditTransaction(type='session_redemption', amount=-X)
+Engine --> BookingCtrl: { success: true, newBalance }
+deactivate Engine
+
+BookingCtrl -> DB: Update booking.status = 'confirmed', generate meeting link
+BookingCtrl -> DB: Reserve AvailabilitySlot(isBooked = true)
+BookingCtrl -> DB: Create Notification for Learner (credits deducted, session confirmed)
+BookingCtrl --> Client: 200 OK (Booking confirmed)
+deactivate BookingCtrl
+Client --> Provider: Updated session view with "Join Video"
+
+== Phase 3: Session Delivery & Earning Teaching Credits ==
+Provider -> Client: Conducts session & clicks "Mark Completed"
+Client -> BookingCtrl: PUT /api/bookings/:id/complete
+activate BookingCtrl
+
+BookingCtrl -> DB: Verify booking.status == 'confirmed'
+BookingCtrl -> Engine: awardCreditsForCompletedSession(bookingId)
+activate Engine
+Engine -> DB: findByIdAndUpdate(providerId, { $inc: { creditBalance: +X, creditsEarned: +X } })
+Engine -> DB: Set booking.creditRewarded = true
+Engine -> DB: Insert CreditTransaction(type='teaching_reward', amount=+X)
+Engine --> BookingCtrl: { success: true, newBalance }
+deactivate Engine
+
+BookingCtrl -> DB: Update booking.status = 'completed'
+BookingCtrl -> DB: Create Notification for Learner ("Please leave feedback")
+BookingCtrl --> Client: 200 OK (Credits awarded)
+deactivate BookingCtrl
+Client --> Provider: Show +X Credits awarded banner
+
+== Phase 4: Feedback & Provider Rating Update ==
+Learner -> Client: Submits 5-Star Feedback & Review
+Client -> BookingCtrl: POST /api/reviews { bookingId, rating: 5, comment }
+activate BookingCtrl
+BookingCtrl -> DB: Insert Review & Set booking.hasReview = true
+BookingCtrl -> DB: Recalculate Provider & Listing Average Ratings
+BookingCtrl --> Client: 201 Created (Review submitted)
+deactivate BookingCtrl
+Client --> Learner: Review posted successfully
+
+@enduml

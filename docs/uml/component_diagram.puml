@@ -1,0 +1,79 @@
+@startuml Skill_Exchange_Component_Diagram
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 10
+
+package "Frontend Application (React + Vite + Tailwind)" {
+  [Router & Layouts] as Router
+  [AuthContext & State] as AuthContext
+  [API Client (Axios)] as APIClient
+  
+  package "View Modules" {
+    [Public Catalog & Details] as PublicViews
+    [Learner Dashboard & Bookings] as LearnerModule
+    [Provider Dashboard & Availability] as ProviderModule
+    [Admin Management & Analytics] as AdminModule
+  }
+}
+
+package "Backend Web API (Node.js + Express + TypeScript)" {
+  [Auth Middleware (JWT/Bcrypt)] as AuthMiddleware
+  [Route Dispatcher] as Dispatcher
+  
+  package "Controller Services" {
+    [AuthController] as AuthCtrl
+    [SkillListingController] as SkillCtrl
+    [BookingController] as BookingCtrl
+    [AvailabilityController] as AvailCtrl
+    [CreditController] as CreditCtrl
+    [ReviewController] as ReviewCtrl
+    [AdminController] as AdminCtrl
+  }
+  
+  component "CreditEngine" as Engine <<Core Business Logic>>
+}
+
+database "MongoDB Document Store" {
+  [Users Collection] as DB_Users
+  [SkillListings Collection] as DB_Listings
+  [AvailabilitySlots Collection] as DB_Slots
+  [Bookings Collection] as DB_Bookings
+  [CreditTransactions Ledger] as DB_Ledger
+  [Reviews Collection] as DB_Reviews
+  [SkillCategories Collection] as DB_Categories
+  [Notifications Collection] as DB_Notifications
+}
+
+' Connections
+PublicViews --> APIClient
+LearnerModule --> APIClient
+ProviderModule --> APIClient
+AdminModule --> APIClient
+
+APIClient ..> Dispatcher : HTTP / REST (JSON)
+Dispatcher --> AuthMiddleware
+AuthMiddleware --> AuthCtrl
+AuthMiddleware --> SkillCtrl
+AuthMiddleware --> BookingCtrl
+AuthMiddleware --> AvailCtrl
+AuthMiddleware --> CreditCtrl
+AuthMiddleware --> ReviewCtrl
+AuthMiddleware --> AdminCtrl
+
+BookingCtrl --> Engine : Deduct / Refund / Reward
+AdminCtrl --> Engine : Audited Adjustments
+
+AuthCtrl --> DB_Users
+AuthCtrl --> DB_Ledger
+SkillCtrl --> DB_Listings
+SkillCtrl --> DB_Categories
+AvailCtrl --> DB_Slots
+BookingCtrl --> DB_Bookings
+BookingCtrl --> DB_Notifications
+ReviewCtrl --> DB_Reviews
+CreditCtrl --> DB_Ledger
+Engine --> DB_Users : Atomic updates
+Engine --> DB_Bookings : Update flags
+Engine --> DB_Ledger : Immutable records
+
+@enduml

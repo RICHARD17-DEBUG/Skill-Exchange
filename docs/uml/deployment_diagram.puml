@@ -1,0 +1,39 @@
+@startuml Skill_Exchange_Deployment_Diagram
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodePadding 25
+
+node "Client Device (Desktop / Tablet / Mobile)" {
+  artifact "Web Browser" as Browser {
+    component "React Single Page Application" as SPA
+    component "LocalStorage (JWT & Session Token)" as Storage
+  }
+}
+
+node "Application Server (Host / Container)" {
+  node "Node.js v24 LTS Runtime" {
+    component "Express HTTP Server (Port 5000)" as ExpressServer
+    component "CreditEngine Business Logic" as CreditEngine
+    component "JWT Authentication & Role Middleware" as SecurityLayer
+  }
+  
+  node "Vite Development / Preview Server (Port 5173)" {
+    component "Static Asset Bundler & Reverse Proxy" as StaticHost
+  }
+}
+
+node "Database Server" {
+  database "MongoDB v7.0 Database (Port 27017)" {
+    component "Mongoose ODM Layer" as Mongoose
+    collections "Users, Listings, Bookings, Ledger, Reviews" as MongoData
+  }
+}
+
+Browser -- StaticHost : HTTP / HTTPS (Assets)
+SPA -- ExpressServer : REST API Requests (JSON / Bearer Token)
+ExpressServer -- SecurityLayer
+SecurityLayer -- CreditEngine
+CreditEngine -- Mongoose : MongoDB Wire Protocol
+Mongoose -- MongoData : Read / Write Transactions
+
+@enduml

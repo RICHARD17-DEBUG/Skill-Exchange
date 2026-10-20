@@ -1,0 +1,48 @@
+@startuml Skill_Exchange_Booking_State_Diagram
+skinparam shadowing false
+skinparam roundcorner 10
+
+[*] --> Pending : Learner submits booking request\n(Credits verified sufficient)
+
+state Pending {
+  [*] --> AwaitingProviderDecision
+  AwaitingProviderDecision : Learner credits NOT yet deducted
+  AwaitingProviderDecision : Slot provisionally reserved
+}
+
+Pending --> Confirmed : Provider accepts request\n[Learner credits deducted atomically via CreditEngine]
+Pending --> Rejected : Provider declines request\n[Slot released, 0 credits spent]
+Pending --> Cancelled : Learner cancels request\n[Slot released, 0 credits spent]
+
+state Confirmed {
+  [*] --> Scheduled
+  Scheduled : Credits deducted from learner
+  Scheduled : Meeting room link active
+  Scheduled : Slot locked
+}
+
+Confirmed --> Cancelled : Learner or Provider cancels\n[Automatic CreditEngine refund, slot unlocked]
+Confirmed --> Completed : Provider marks session as completed\n[Teaching credits awarded to provider]
+
+state Completed {
+  [*] --> AwaitingReview
+  AwaitingReview : Review permitted (Learner only)
+  AwaitingReview --> FeedbackRecorded : Review submitted
+  FeedbackRecorded : Rating recalculated, immutable
+}
+
+state Cancelled {
+  [*] --> CancellationLogged
+  CancellationLogged : Transaction ledger records refund if applicable
+}
+
+state Rejected {
+  [*] --> RejectionLogged
+  RejectionLogged : Reason stored, no credit movement
+}
+
+Completed --> [*]
+Cancelled --> [*]
+Rejected --> [*]
+
+@enduml

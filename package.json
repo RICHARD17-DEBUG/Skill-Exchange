@@ -1,0 +1,24 @@
+{
+  "name": "skill-exchange-platform",
+  "version": "1.0.0",
+  "description": "Skill Exchange Platform — Credits-Only Learning System",
+  "scripts": {
+    "install:all": "pnpm --prefix server install && pnpm --prefix client install",
+    "dev:server": "pnpm --prefix server dev",
+    "dev:client": "pnpm --prefix client dev",
+    "dev": "node scripts/dev.js",
+    "build": "pnpm --prefix server build && pnpm --prefix client build",
+    "seed": "pnpm --prefix server seed",
+    "test": "pnpm --prefix server test"
+  },
+  "keywords": [
+    "skill-exchange",
+    "credits-system",
+    "react",
+    "express",
+    "mongodb",
+    "ooad"
+  ],
+  "author": "Skill Exchange Team",
+  "license": "MIT"
+}

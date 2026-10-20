@@ -1,0 +1,161 @@
+@startuml Skill_Exchange_Class_Diagram
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundcorner 10
+
+class User {
+  - _id: ObjectId
+  - name: String
+  - email: String
+  - passwordHash: String
+  - roles: UserRole[]
+  - currentRole: UserRole
+  - creditBalance: Number
+  - creditsEarned: Number
+  - creditsSpent: Number
+  - avatar: String
+  - bio: String
+  - interests: String[]
+  - skillsToLearn: String[]
+  - status: AccountStatus
+  - providerProfile: ProviderProfile
+  + comparePassword(password: String): Boolean
+  + switchRole(newRole: UserRole): Void
+}
+
+class ProviderProfile {
+  - headline: String
+  - bio: String
+  - yearsOfExperience: Number
+  - rating: Number
+  - reviewCount: Number
+  - isVerified: Boolean
+  - verificationStatus: VerificationStatus
+  - verificationNotes: String
+  - verifiedAt: Date
+}
+
+class SkillCategory {
+  - _id: ObjectId
+  - name: String
+  - slug: String
+  - description: String
+  - icon: String
+  - isActive: Boolean
+}
+
+class SkillListing {
+  - _id: ObjectId
+  - providerId: ObjectId
+  - title: String
+  - slug: String
+  - description: String
+  - categoryId: ObjectId
+  - proficiencyLevel: ProficiencyLevel
+  - creditCost: Number
+  - durationMinutes: Number
+  - sessionFormat: SessionFormat
+  - tags: String[]
+  - learningOutcomes: String[]
+  - prerequisites: String[]
+  - rating: Number
+  - reviewCount: Number
+  - totalBookings: Number
+  - isActive: Boolean
+}
+
+class AvailabilitySlot {
+  - _id: ObjectId
+  - providerId: ObjectId
+  - date: String
+  - startTime: String
+  - endTime: String
+  - isBooked: Boolean
+  - bookingId: ObjectId
+}
+
+class Booking {
+  - _id: ObjectId
+  - bookingReference: String
+  - learnerId: ObjectId
+  - providerId: ObjectId
+  - skillListingId: ObjectId
+  - date: String
+  - startTime: String
+  - endTime: String
+  - durationMinutes: Number
+  - creditCost: Number
+  - status: BookingStatus
+  - meetingLink: String
+  - learnerNotes: String
+  - creditDeducted: Boolean
+  - creditRefunded: Boolean
+  - creditRewarded: Boolean
+  - hasReview: Boolean
+  - confirmedAt: Date
+  - completedAt: Date
+}
+
+class CreditTransaction {
+  - _id: ObjectId
+  - transactionId: String
+  - userId: ObjectId
+  - type: TransactionType
+  - amount: Number
+  - balanceAfter: Number
+  - relatedBookingId: ObjectId
+  - description: String
+  - status: String
+  - createdAt: Date
+}
+
+class Review {
+  - _id: ObjectId
+  - bookingId: ObjectId
+  - skillListingId: ObjectId
+  - reviewerId: ObjectId
+  - providerId: ObjectId
+  - rating: Number
+  - comment: String
+  - status: ReviewStatus
+  - createdAt: Date
+}
+
+class Notification {
+  - _id: ObjectId
+  - userId: ObjectId
+  - title: String
+  - message: String
+  - type: NotificationType
+  - isRead: Boolean
+  - link: String
+  - createdAt: Date
+}
+
+class CreditEngine {
+  + deductCreditsForBooking(bookingId, learnerId, amount): Result
+  + refundCreditsForBooking(bookingId, reason): Result
+  + awardCreditsForCompletedSession(bookingId): Result
+  + adminAdjustCredits(userId, amount, reason, adminId): Result
+  - generateTransactionId(): String
+}
+
+' Relationships
+User *-- ProviderProfile
+User "1" <-- "many" SkillListing : owns
+User "1" <-- "many" AvailabilitySlot : manages
+SkillCategory "1" <-- "many" SkillListing : categorizes
+User "1" <-- "many" Booking : learner
+User "1" <-- "many" Booking : provider
+SkillListing "1" <-- "many" Booking : scheduledFor
+Booking "1" <-- "0..1" Review : receives
+User "1" <-- "many" Review : reviewer
+User "1" <-- "many" Review : reviewedProvider
+User "1" <-- "many" CreditTransaction : belongsTo
+Booking "0..1" <-- "many" CreditTransaction : triggers
+User "1" <-- "many" Notification : receives
+CreditEngine ..> User : modifies balance
+CreditEngine ..> Booking : updates status flags
+CreditEngine ..> CreditTransaction : records ledger
+
+@enduml

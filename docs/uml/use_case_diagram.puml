@@ -1,0 +1,86 @@
+@startuml Skill_Exchange_Use_Case_Diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+
+actor "Skill Seeker\n(Learner)" as Learner
+actor "Skill Provider\n(Teacher)" as Provider
+actor "Administrator" as Admin
+
+rectangle "Skill Exchange Platform — Credits-Only System" {
+  ' Auth Use Cases
+  usecase "Register & Claim 100 Welcome Credits" as UC_Register
+  usecase "Log In / Authenticate (JWT)" as UC_Login
+  usecase "Switch Dashboard Context" as UC_SwitchRole
+  usecase "Manage Personal Profile" as UC_Profile
+
+  ' Skill Discovery & Listings
+  usecase "Browse & Search Skill Catalog" as UC_SearchSkills
+  usecase "Filter by Category, Rating & Credit Cost" as UC_FilterSkills
+  usecase "View Skill Details & Provider Info" as UC_ViewSkill
+  usecase "Publish & Manage Skill Listings" as UC_ManageListing
+
+  ' Booking & Scheduling
+  usecase "Define Teaching Availability Slots" as UC_SetAvailability
+  usecase "Request Session Booking" as UC_RequestBooking
+  usecase "Validate Credit Balance" as UC_ValidateCredits
+  usecase "Accept / Reject Booking Request" as UC_AcceptBooking
+  usecase "Cancel Booking (Eligible Refund)" as UC_CancelBooking
+  usecase "Mark Session as Completed" as UC_CompleteSession
+
+  ' Credit Economy
+  usecase "Redeem Skill Credits" as UC_DeductCredits
+  usecase "Refund Redeemed Credits" as UC_RefundCredits
+  usecase "Earn Teaching Credits" as UC_RewardCredits
+  usecase "Inspect Audit Transaction Ledger" as UC_ViewLedger
+  usecase "Audited Credit Adjustment" as UC_AdminAdjustCredits
+
+  ' Feedback & Governance
+  usecase "Submit Session Rating & Feedback" as UC_Review
+  usecase "Apply for Provider Verification" as UC_ApplyVerification
+  usecase "Moderate Reviews & Listings" as UC_Moderate
+  usecase "Verify Provider Credentials" as UC_VerifyProvider
+  usecase "Manage Users & Toggle Status" as UC_ManageUsers
+  usecase "View Platform Analytics & Reports" as UC_ViewReports
+}
+
+' Learner associations
+Learner --> UC_Register
+Learner --> UC_Login
+Learner --> UC_Profile
+Learner --> UC_SwitchRole
+Learner --> UC_SearchSkills
+Learner --> UC_FilterSkills
+Learner --> UC_ViewSkill
+Learner --> UC_RequestBooking
+Learner --> UC_CancelBooking
+Learner --> UC_ViewLedger
+Learner --> UC_Review
+Learner --> UC_ApplyVerification
+
+' Provider associations
+Provider --> UC_Login
+Provider --> UC_SwitchRole
+Provider --> UC_ManageListing
+Provider --> UC_SetAvailability
+Provider --> UC_AcceptBooking
+Provider --> UC_CompleteSession
+Provider --> UC_ViewLedger
+
+' Admin associations
+Admin --> UC_Login
+Admin --> UC_ManageUsers
+Admin --> UC_VerifyProvider
+Admin --> UC_Moderate
+Admin --> UC_ViewLedger
+Admin --> UC_AdminAdjustCredits
+Admin --> UC_ViewReports
+
+' Includes & Extends
+UC_RequestBooking ..> UC_ValidateCredits : <<include>>
+UC_AcceptBooking ..> UC_DeductCredits : <<include>>
+UC_CancelBooking ..> UC_RefundCredits : <<extend>>
+UC_CompleteSession ..> UC_RewardCredits : <<include>>
+
+@enduml
